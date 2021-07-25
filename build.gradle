@@ -1,0 +1,100 @@
+plugins {
+    id "java"
+    id "application"
+    id "io.ratpack.ratpack-java" version "1.8.0"
+    id "io.freefair.aspectj.post-compile-weaving" version "5.0.1"
+    id "com.adarshr.test-logger" version "2.1.0"
+    id 'com.github.johnrengelman.shadow' version '6.0.0'
+}
+
+group "com.backend"
+
+def imageName = rootProject.name
+def imageVersion = version
+
+/**
+ * Refresh Gradle Dependencies & Build Source
+ */
+task cleanBuild(type: Exec) {
+    commandLine "./gradlew", "--refresh-dependencies", "clean", "build"
+}
+
+/**
+ * Build Backend API Docker Image
+ */
+task buildDockerImage(type: Exec, dependsOn: cleanBuild) {
+    if (imageVersion.endsWith("SNAPSHOT")) {
+        imageVersion = "DEV"
+    }
+
+    workingDir projectDir
+    commandLine "./scripts/build-image.sh", "${imageName}", "${imageVersion}"
+}
+
+/**
+ * Start API Server, Postgres DB and Postgres Admin Console
+ */
+task fireUp(type: Exec, dependsOn: buildDockerImage) {
+    workingDir projectDir
+    commandLine "./scripts/run-all.sh"
+}
+
+/**
+ * Stop API Server, PostgreSQL DB and Postgres Admin Console
+ */
+task shutDown(type: Exec) {
+    workingDir projectDir
+    commandLine "./scripts/stop-all.sh"
+}
+
+/**
+ * Run API Server
+ */
+task runServer(type: Exec) {
+    workingDir projectDir
+    commandLine "./scripts/run-server.sh"
+}
+
+test {
+    testlogger {
+        theme "mocha"
+    }
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    compile group: 'org.aspectj', name: 'aspectjrt', version: '1.9.4'
+    runtime group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.21'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '1.10.19'
+    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '1.6.5'
+    testCompile group: 'org.powermock', name: 'powermock-api-mockito', version: '1.6.5'
+}
+
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+application {
+    mainClassName = "com.backend.Application"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": application.mainClassName,
+                "Implementation-Title": "Backend REST API",
+                "Implementation-Version": project.version,
+                "Built-By": System.getProperty('user.name'),
+                "Built-JDK": System.getProperty('java.version')
+    }
+}
+
+distZip.enabled = false
+distTar.enabled = false
+shadowDistZip.enabled = false
+shadowDistTar.enabled = false
