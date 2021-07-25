@@ -6,7 +6,9 @@ LABEL name="backend-api" release="${image_version}"
 ENV PORT 5050
 EXPOSE ${PORT}
 
-WORKDIR /workdir
+RUN adduser -D -h /home -u 1000 dev
+WORKDIR  /home/dev/app
+
 
 # Using Tini to avoid zombie processes
 ENV TINI_VERSION v0.19.0
@@ -16,3 +18,5 @@ RUN chmod +x /tini
 ADD *-all.jar backend-api.jar
 
 ENTRYPOINT ["/tini", "-s", "-v", "--", "java", "-jar", "./backend-api.jar"]
+
+USER dev
