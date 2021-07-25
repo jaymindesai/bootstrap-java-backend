@@ -2,7 +2,7 @@
 
 A template repository for backend Java REST API server with a database
 
-Stack: Ratpack Server, Postgres DB, Gradle, Docker
+Stack: Ratpack Server, Postgres DB, Gradle, Docker, Shell
 
 ## Prerequisites
 
